@@ -1,12 +1,20 @@
 import torch
 import torch.nn as nn
+import torch.nn.init as init
 import torch.nn.functional as F
-
 from torch.autograd import Variable
+
 import sys
+import numpy as np
 
 def conv3x3(in_planes, out_planes, stride=1):
     return nn.Conv2d(in_planes, out_planes, kernel_size=3, stride=stride, padding=1, bias=True)
+
+def conv_init(m):
+    classname = m.__class__.__name__
+    if classname.find('Conv') != -1:
+        init.xavier_uniform(m.weight, gain=np.sqrt(2))
+        init.constant(m.bias, 0)
 
 class wide_basic(nn.Module):
     def __init__(self, in_planes, planes, dropout_rate, stride=1):
@@ -72,6 +80,7 @@ class Wide_ResNet(nn.Module):
         return out
 
 if __name__ == '__main__':
-    net=Wide_ResNet(28, 10)
+    net=Wide_ResNet(28, 10, 0.3)
     y = net(Variable(torch.randn(1,3,32,32)))
+
     print(y.size())

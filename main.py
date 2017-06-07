@@ -85,6 +85,7 @@ else:
     else:
         print('Error : Network should be either [LeNet / VGGNet / ResNet / Wide_ResNet')
         sys.exit(0)
+    net.apply(conv_init)
 
 if use_cuda:
     net.cuda()
@@ -175,15 +176,21 @@ print('| Initial Learning Rate = ' + str(args.lr))
 print('| Optimizer = ' + str(optim_type))
 
 elapsed_time = 0
+
+def get_hms(seconds):
+    m, s = divmod(seconds, 60)
+    h, m = divmod(m, 60)
+    return h, m, s
+
 for epoch in range(start_epoch, start_epoch+num_epochs):
     start_time = time.time()
+
     train(epoch)
     test(epoch)
+
     epoch_time = time.time() - start_time
     elapsed_time += epoch_time
-    m, s = divmod(elapsed_time, 60)
-    h, m = divmod(m, 60)
-    print('| Elapsed time : %d:%02d:%02d'  %(h, m, s))
+    print('| Elapsed time : %d:%02d:%02d'  %(get_hms(elapsed_time)))
 
 print('\n[Phase 4] : Testing model')
 print('* Test results : Acc@1 = %.2f%%' %(best_acc))

@@ -2,6 +2,12 @@ import torch
 import torch.nn as nn
 from torch.autograd import Variable
 
+def conv_init(m):
+    classname = m.__class__.__name__
+    if classname.find('Conv') != -1:
+        init.xavier_uniform(m.weight, gain=np.sqrt(2))
+        init.constant(m.bias, 0)
+
 def cfg(depth):
     depth_lst = [11, 13, 16, 19]
     assert (depth in depth_lst), "Error : VGGnet depth should be either 11, 13, 16, 19"
