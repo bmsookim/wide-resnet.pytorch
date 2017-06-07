@@ -104,4 +104,4 @@ ENV/
 *.t7
 
 # Data
-./data/*
+./data/
