@@ -99,3 +99,9 @@ ENV/
 
 # mypy
 .mypy_cache/
+
+# Torch
+*.t7
+
+# Data
+./data/*
