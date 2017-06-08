@@ -18,6 +18,12 @@ pip install torchvision
 git clone https://github.com/meliketoy/Pytorch-wide-resnet
 ```
 
+## How to run
+After you have cloned the repository, you can train each dataset of either cifar10, cifar100 by running the script below.
+```bash
+python main --lr 0.1 resume false --net_type [lenet/vggnet/resnet/wide-resnet] --depth 28 --widen_factor 10 --dropout_rate 0.3 --dataset [cifar10/cifar100] 
+```
+
 ## Implementation Details
 
 |   epoch   | learning rate |  weight decay | Optimizer | Momentum | Nesterov |
