@@ -4,7 +4,7 @@ Best CIFAR-10, CIFAR-100 results with wide-residual networks using PyTorch
 
 Pytorch Implementation of Sergey Zagoruyko's [Wide Residual Networks](https://arxiv.org/pdf/1605.07146v2.pdf)
 
-For Torch implementations, see [here](https://github.com/meliketoy/wide-residual-networks).
+For Torch implementations, see [here](https://github.com/meliketoy/wide-residual-network).
 
 ## Requirements
 See the [installation instruction](INSTALL.md) for a step-by-step installation guide.
