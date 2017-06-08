@@ -81,7 +81,7 @@ class Bottleneck(nn.Module):
         return out
 
 class ResNet(nn.Module):
-    def __init__(self, depth, num_classes=10):
+    def __init__(self, depth, num_classes):
         super(ResNet, self).__init__()
         self.in_planes = 16
 
@@ -116,6 +116,6 @@ class ResNet(nn.Module):
         return out
 
 if __name__ == '__main__':
-    net=ResNet(50)
+    net=ResNet(50, 10)
     y = net(Variable(torch.randn(1,3,32,32)))
     print(y.size())

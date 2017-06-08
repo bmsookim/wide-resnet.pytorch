@@ -5,6 +5,7 @@ import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
 import torch.backends.cudnn as cudnn
+import config as cf
 
 import torchvision
 import torchvision.transforms as transforms
@@ -12,7 +13,6 @@ import torchvision.transforms as transforms
 import os
 import sys
 import time
-import math
 import argparse
 import datetime
 
@@ -26,15 +26,13 @@ parser.add_argument('--net_type', default='wide-resnet', type=str, help='model')
 parser.add_argument('--depth', default=28, type=int, help='depth of model')
 parser.add_argument('--widen_factor', default=10, type=int, help='width of model')
 parser.add_argument('--dropout', default=0.3, type=float, help='dropout_rate')
+parser.add_argument('--dataset', default='cifar10', type=str, help='dataset = [cifar10/cifar100]')
 args = parser.parse_args()
 
 # Hyper Parameter settings
 use_cuda = torch.cuda.is_available()
 best_acc = 0
-start_epoch = 1
-num_epochs = 200
-batch_size = 128
-optim_type = 'SGD'
+start_epoch, num_epochs, batch_size, optim_type = cf.start_epoch, cf.num_epochs, cf.batch_size, cf.optim_type
 
 # Data Uplaod
 print('\n[Phase 1] : Data Preparation')
@@ -42,21 +40,25 @@ transform_train = transforms.Compose([
     transforms.RandomCrop(32, padding=4),
     transforms.RandomHorizontalFlip(),
     transforms.ToTensor(),
-    transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
+    transforms.Normalize(cf.mean[args.dataset], cf.std[args.dataset]),
 ]) # meanstd transformation
 
 transform_test = transforms.Compose([
     transforms.ToTensor(),
-    transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
+    transforms.Normalize(cf.mean[args.dataset], cf.std[args.dataset]),
 ])
 
-trainset = torchvision.datasets.CIFAR10(root='./data', train=True, download=True, transform=transform_train)
+if(args.dataset == 'cifar10'):
+    trainset = torchvision.datasets.CIFAR10(root='./data', train=True, download=True, transform=transform_train)
+    testset = torchvision.datasets.CIFAR10(root='./data', train=False, download=False, transform=transform_test)
+    num_classes = 10
+elif(args.dataset == 'cifar100'):
+    trainset = torchvision.datasets.CIFAR100(root='./data', train=True, download=True, transform=transform_train)
+    testset = torchvision.datasets.CIFAR100(root='./data', train=False, download=False, transform=transform_test)
+    num_classes = 100
+
 trainloader = torch.utils.data.DataLoader(trainset, batch_size=batch_size, shuffle=True, num_workers=2)
-
-testset = torchvision.datasets.CIFAR10(root='./data', train=False, download=False, transform=transform_test)
 testloader = torch.utils.data.DataLoader(testset, batch_size=100, shuffle=False, num_workers=2)
-
-classes = ('plane', 'car', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck')
 
 # Model
 print('\n[Phase 2] : Model setup')
@@ -71,16 +73,16 @@ if args.resume:
 else:
     print('| Building net type [' + args.net_type + ']...')
     if (args.net_type == 'lenet'):
-        net = LeNet()
+        net = LeNet(num_classes)
         file_name = 'lenet'
     elif (args.net_type == 'vggnet'):
-        net = VGG(args.depth)
+        net = VGG(args.depth, num_classes)
         file_name = 'vgg-'+str(args.depth)
     elif (args.net_type == 'resnet'):
-        net = ResNet(args.depth)
+        net = ResNet(args.depth, num_classes)
         file_name = 'resnet-'+str(args.depth)
     elif (args.net_type == 'wide-resnet'):
-        net = Wide_ResNet(args.depth, args.widen_factor, args.dropout)
+        net = Wide_ResNet(args.depth, args.widen_factor, args.dropout, num_classes)
         file_name = 'wide-resnet-'+str(args.depth)+'x'+str(args.widen_factor)
     else:
         print('Error : Network should be either [LeNet / VGGNet / ResNet / Wide_ResNet')
@@ -94,27 +96,15 @@ if use_cuda:
 
 criterion = nn.CrossEntropyLoss()
 
-# Learning Rate Schedule
-def learning_rate(init, epoch):
-    optim_factor = 0
-    if(epoch > 160):
-        optim_factor = 3
-    elif(epoch > 120):
-        optim_factor = 2
-    elif(epoch > 60):
-        optim_factor = 1
-
-    return init*math.pow(0.2, optim_factor)
-
 # Training
 def train(epoch):
     net.train()
     train_loss = 0
     correct = 0
     total = 0
-    optimizer = optim.SGD(net.parameters(), lr=learning_rate(args.lr, epoch), momentum=0.9, weight_decay=5e-4)
+    optimizer = optim.SGD(net.parameters(), lr=cf.learning_rate(args.lr, epoch), momentum=0.9, weight_decay=5e-4)
 
-    print('\n=> Training Epoch #%d, LR=%.4f' %(epoch, learning_rate(args.lr, epoch)))
+    print('\n=> Training Epoch #%d, LR=%.4f' %(epoch, cf.learning_rate(args.lr, epoch)))
     for batch_idx, (inputs, targets) in enumerate(trainloader):
         if use_cuda:
             inputs, targets = inputs.cuda(), targets.cuda() # GPU settings
@@ -167,7 +157,10 @@ def test(epoch):
         }
         if not os.path.isdir('checkpoint'):
             os.mkdir('checkpoint')
-        torch.save(state, './checkpoint/'+file_name+'.t7')
+        save_point = './checkpoint/'+args.dataset+os.sep
+        if not os.path.isdir(save_point):
+            os.mkdir(save_point)
+        torch.save(state, save_point+file_name+'.t7')
         best_acc = acc
 
 print('\n[Phase 3] : Training model')
@@ -176,12 +169,6 @@ print('| Initial Learning Rate = ' + str(args.lr))
 print('| Optimizer = ' + str(optim_type))
 
 elapsed_time = 0
-
-def get_hms(seconds):
-    m, s = divmod(seconds, 60)
-    h, m = divmod(m, 60)
-    return h, m, s
-
 for epoch in range(start_epoch, start_epoch+num_epochs):
     start_time = time.time()
 
@@ -190,7 +177,7 @@ for epoch in range(start_epoch, start_epoch+num_epochs):
 
     epoch_time = time.time() - start_time
     elapsed_time += epoch_time
-    print('| Elapsed time : %d:%02d:%02d'  %(get_hms(elapsed_time)))
+    print('| Elapsed time : %d:%02d:%02d'  %(cf.get_hms(elapsed_time)))
 
 print('\n[Phase 4] : Testing model')
 print('* Test results : Acc@1 = %.2f%%' %(best_acc))

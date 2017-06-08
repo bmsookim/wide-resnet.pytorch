@@ -47,7 +47,7 @@ def conv3x3(in_planes, out_planes, stride=1):
     return nn.Conv2d(in_planes, out_planes, kernel_size=3, stride=stride, padding=1, bias=True)
 
 class VGG(nn.Module):
-    def __init__(self, depth, num_classes=10):
+    def __init__(self, depth, num_classes):
         super(VGG, self).__init__()
         self.features = self._make_layers(cfg(depth))
         self.linear = nn.Linear(512, num_classes)
@@ -75,6 +75,6 @@ class VGG(nn.Module):
         return nn.Sequential(*layers)
 
 if __name__ == "__main__":
-    net = VGG(16)
+    net = VGG(16, 10)
     y = net(Variable(torch.randn(1,3,32,32)))
     print(y.size())
