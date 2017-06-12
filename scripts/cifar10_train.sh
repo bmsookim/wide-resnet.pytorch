@@ -6,7 +6,6 @@ export dataset='cifar10'
 
 python main.py \
     --lr 0.1 \
-    --resume False \
     --net_type ${netType} \
     --depth ${depth} \
     --widen_factor ${width} \
