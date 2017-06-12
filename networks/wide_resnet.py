@@ -24,7 +24,7 @@ class wide_basic(nn.Module):
         super(wide_basic, self).__init__()
         self.bn1 = nn.BatchNorm2d(in_planes)
         self.conv1 = nn.Conv2d(in_planes, planes, kernel_size=3, padding=1, bias=True)
-        self.dropout = nn.Dropout2d(p=dropout_rate)
+        self.dropout = nn.Dropout(p=dropout_rate)
         self.bn2 = nn.BatchNorm2d(planes)
         self.conv2 = nn.Conv2d(planes, planes, kernel_size=3, stride=stride, padding=1, bias=True)
 
@@ -50,7 +50,7 @@ class Wide_ResNet(nn.Module):
         n = (depth-4)/6
         k = widen_factor
 
-        print('| Wide-Resnet %dx%d CIFAR-10' %(depth, k))
+        print('| Wide-Resnet %dx%d' %(depth, k))
         nStages = [16, 16*k, 32*k, 64*k]
 
         self.conv1 = conv3x3(3,nStages[0])
