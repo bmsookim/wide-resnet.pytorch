@@ -21,12 +21,13 @@ from torch.autograd import Variable
 
 parser = argparse.ArgumentParser(description='PyTorch CIFAR-10 Training')
 parser.add_argument('--lr', default=0.1, type=float, help='learning_rate')
-parser.add_argument('--resume', '-r', action='store_true', help='resume from checkpoint')
 parser.add_argument('--net_type', default='wide-resnet', type=str, help='model')
 parser.add_argument('--depth', default=28, type=int, help='depth of model')
 parser.add_argument('--widen_factor', default=10, type=int, help='width of model')
 parser.add_argument('--dropout', default=0.3, type=float, help='dropout_rate')
 parser.add_argument('--dataset', default='cifar10', type=str, help='dataset = [cifar10/cifar100]')
+parser.add_argument('--resume', '-r', action='store_true', help='resume from checkpoint')
+parser.add_argument('--testOnly', '-t', action='store_true', help='Test mode with the saved model')
 args = parser.parse_args()
 
 # Hyper Parameter settings
@@ -64,18 +65,8 @@ elif(args.dataset == 'cifar100'):
 trainloader = torch.utils.data.DataLoader(trainset, batch_size=batch_size, shuffle=True, num_workers=2)
 testloader = torch.utils.data.DataLoader(testset, batch_size=100, shuffle=False, num_workers=2)
 
-# Model
-print('\n[Phase 2] : Model setup')
-if args.resume:
-    # Load checkpoint
-    print('| Resuming from checkpoint...')
-    assert os.path.isdir('checkpoint'), 'Error: No checkpoint directory found!'
-    checkpoint = torch.load('./checkpoint/ckpt.t7') # What's the differnece between load_state
-    net = checkpoint['net']
-    best_acc = checkpoint['acc']
-    start_epoch = checkpoint['epoch']
-else:
-    print('| Building net type [' + args.net_type + ']...')
+# Return network & file name
+def getNetwork(args):
     if (args.net_type == 'lenet'):
         net = LeNet(num_classes)
         file_name = 'lenet'
@@ -91,6 +82,57 @@ else:
     else:
         print('Error : Network should be either [LeNet / VGGNet / ResNet / Wide_ResNet')
         sys.exit(0)
+
+    return net, file_name
+
+# Test only option
+if (args.testOnly):
+    print('\n[Test Phase] : Model setup')
+    assert os.path.isdir('checkpoint'), 'Error: No checkpoint directory found!'
+    _, file_name = getNetwork(args)
+    checkpoint = torch.load('./checkpoint/'+args.dataset+os.sep+file_name+'.t7')
+    net = checkpoint['net']
+
+    if use_cuda:
+        net.cuda()
+        net = torch.nn.DataParallel(net, device_ids=range(torch.cuda.device_count()))
+        cudnn.benchmark = True
+
+    net.eval()
+    test_loss = 0
+    correct = 0
+    total = 0
+
+    for batch_idx, (inputs, targets) in enumerate(testloader):
+        if use_cuda:
+            inputs, targets = inputs.cuda(), targets.cuda()
+        inputs, targets = Variable(inputs, volatile=True), Variable(targets)
+        outputs = net(inputs)
+
+        _, predicted = torch.max(outputs.data, 1)
+        total += targets.size(0)
+        correct += predicted.eq(targets.data).cpu().sum()
+
+    # Save checkpoint when best model
+    acc = 100.*correct/total
+    print("| Test Result\tAcc@1: %.2f%%" %(acc))
+
+    sys.exit(0)
+
+# Model
+print('\n[Phase 2] : Model setup')
+if args.resume:
+    # Load checkpoint
+    print('| Resuming from checkpoint...')
+    assert os.path.isdir('checkpoint'), 'Error: No checkpoint directory found!'
+    _, file_name = getNetwork(args)
+    checkpoint = torch.load('./checkpoint/'+args.dataset+os.sep+file_name+'.t7')
+    net = checkpoint['net']
+    best_acc = checkpoint['acc']
+    start_epoch = checkpoint['epoch']
+else:
+    print('| Building net type [' + args.net_type + ']...')
+    net, file_name = getNetwork(args)
     net.apply(conv_init)
 
 if use_cuda:
