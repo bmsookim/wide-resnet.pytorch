@@ -11,4 +11,3 @@ python main.py \
     --widen_factor ${width} \
     --dropout 0 \
     --dataset ${dataset} \
-    --testOnly

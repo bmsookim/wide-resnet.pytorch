@@ -1,4 +1,4 @@
-Pytorch-wide-resnet
+wide-resnet.pytorch
 ======================================================
 Best CIFAR-10, CIFAR-100 results with wide-residual networks using PyTorch
 
@@ -15,7 +15,7 @@ See the [server instruction](SERVER.md) for server settup.
 ```bash
 pip install http://download.pytorch.org/whl/cu80/torch-0.1.12.post2-cp27-none-linux_x86_64.whl
 pip install torchvision
-git clone https://github.com/meliketoy/Pytorch-wide-resnet
+git clone https://github.com/meliketoy/wide-resnet.pytorch
 ```
 
 ## How to run
@@ -35,7 +35,7 @@ python main --lr 0.1 resume false --net_type [lenet/vggnet/resnet/wide-resnet] -
 
 ## CIFAR-10 Results
  
-![alt tag](IMAGES/cifar10_image.png)
+![alt tag](imgs/cifar10_image.png)
 
 Below is the result of the test set accuracy for **CIFAR-10 dataset** training.
 
@@ -52,7 +52,7 @@ Below is the result of the test set accuracy for **CIFAR-10 dataset** training.
 
 ## CIFAR-100 Results
 
-![alt tag](IMAGES/cifar100_image.png)
+![alt tag](imgs/cifar100_image.png)
 
 Below is the result of the test set accuracy for **CIFAR-100 dataset** training.
 
