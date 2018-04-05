@@ -1,5 +1,6 @@
-wide-resnet.pytorch
-======================================================
+<p align="center"><img width="40%" src="./imgs/pytorch.png"></p>
+-------------------------------------------------------------------------
+
 Best CIFAR-10, CIFAR-100 results with wide-residual networks using PyTorch
 
 Pytorch Implementation of Sergey Zagoruyko's [Wide Residual Networks](https://arxiv.org/pdf/1605.07146v2.pdf)

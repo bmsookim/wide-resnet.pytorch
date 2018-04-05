@@ -113,7 +113,6 @@ if (args.testOnly):
         total += targets.size(0)
         correct += predicted.eq(targets.data).cpu().sum()
 
-    # Save checkpoint when best model
     acc = 100.*correct/total
     print("| Test Result\tAcc@1: %.2f%%" %(acc))
 
