@@ -99,22 +99,24 @@ if (args.testOnly):
         cudnn.benchmark = True
 
     net.eval()
+    net.training = False
     test_loss = 0
     correct = 0
     total = 0
 
-    for batch_idx, (inputs, targets) in enumerate(testloader):
-        if use_cuda:
-            inputs, targets = inputs.cuda(), targets.cuda()
-        inputs, targets = Variable(inputs, volatile=True), Variable(targets)
-        outputs = net(inputs)
+    with torch.no_grad():
+        for batch_idx, (inputs, targets) in enumerate(testloader):
+            if use_cuda:
+                inputs, targets = inputs.cuda(), targets.cuda()
+            inputs, targets = Variable(inputs), Variable(targets)
+            outputs = net(inputs)
 
-        _, predicted = torch.max(outputs.data, 1)
-        total += targets.size(0)
-        correct += predicted.eq(targets.data).cpu().sum()
+            _, predicted = torch.max(outputs.data, 1)
+            total += targets.size(0)
+            correct += predicted.eq(targets.data).cpu().sum()
 
-    acc = 100.*correct/total
-    print("| Test Result\tAcc@1: %.2f%%" %(acc))
+        acc = 100.*correct/total
+        print("| Test Result\tAcc@1: %.2f%%" %(acc))
 
     sys.exit(0)
 
@@ -144,6 +146,7 @@ criterion = nn.CrossEntropyLoss()
 # Training
 def train(epoch):
     net.train()
+    net.training = True
     train_loss = 0
     correct = 0
     total = 0
@@ -174,39 +177,41 @@ def train(epoch):
 def test(epoch):
     global best_acc
     net.eval()
+    net.training = False
     test_loss = 0
     correct = 0
     total = 0
-    for batch_idx, (inputs, targets) in enumerate(testloader):
-        if use_cuda:
-            inputs, targets = inputs.cuda(), targets.cuda()
-        inputs, targets = Variable(inputs, volatile=True), Variable(targets)
-        outputs = net(inputs)
-        loss = criterion(outputs, targets)
+    with torch.no_grad():
+        for batch_idx, (inputs, targets) in enumerate(testloader):
+            if use_cuda:
+                inputs, targets = inputs.cuda(), targets.cuda()
+            inputs, targets = Variable(inputs), Variable(targets)
+            outputs = net(inputs)
+            loss = criterion(outputs, targets)
 
-        test_loss += loss.item()
-        _, predicted = torch.max(outputs.data, 1)
-        total += targets.size(0)
-        correct += predicted.eq(targets.data).cpu().sum()
+            test_loss += loss.item()
+            _, predicted = torch.max(outputs.data, 1)
+            total += targets.size(0)
+            correct += predicted.eq(targets.data).cpu().sum()
 
-    # Save checkpoint when best model
-    acc = 100.*correct/total
-    print("\n| Validation Epoch #%d\t\t\tLoss: %.4f Acc@1: %.2f%%" %(epoch, loss.item(), acc))
+        # Save checkpoint when best model
+        acc = 100.*correct/total
+        print("\n| Validation Epoch #%d\t\t\tLoss: %.4f Acc@1: %.2f%%" %(epoch, loss.item(), acc))
 
-    if acc > best_acc:
-        print('| Saving Best model...\t\t\tTop1 = %.2f%%' %(acc))
-        state = {
-                'net':net.module if use_cuda else net,
-                'acc':acc,
-                'epoch':epoch,
-        }
-        if not os.path.isdir('checkpoint'):
-            os.mkdir('checkpoint')
-        save_point = './checkpoint/'+args.dataset+os.sep
-        if not os.path.isdir(save_point):
-            os.mkdir(save_point)
-        torch.save(state, save_point+file_name+'.t7')
-        best_acc = acc
+        if acc > best_acc:
+            print('| Saving Best model...\t\t\tTop1 = %.2f%%' %(acc))
+            state = {
+                    'net':net.module if use_cuda else net,
+                    'acc':acc,
+                    'epoch':epoch,
+            }
+            if not os.path.isdir('checkpoint'):
+                os.mkdir('checkpoint')
+            save_point = './checkpoint/'+args.dataset+os.sep
+            if not os.path.isdir(save_point):
+                os.mkdir(save_point)
+            torch.save(state, save_point+file_name+'.t7')
+            best_acc = acc
 
 print('\n[Phase 3] : Training model')
 print('| Training Epochs = ' + str(num_epochs))
